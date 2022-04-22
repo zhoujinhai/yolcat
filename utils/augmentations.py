@@ -524,6 +524,7 @@ class PhotometricDistort(object):
         im, masks, boxes, labels = distort(im, masks, boxes, labels)
         return self.rand_light_noise(im, masks, boxes, labels)
 
+
 class PrepareMasks(object):
     """
     Prepares the gt masks for use_gt_bboxes by cropping with the gt box
@@ -657,12 +658,14 @@ class FastBaseTransform(torch.nn.Module):
         # Return value is in channel order [n, c, h, w] and RGB
         return img
 
+
 def do_nothing(img=None, masks=None, boxes=None, labels=None):
     return img, masks, boxes, labels
 
 
 def enable_if(condition, obj):
     return obj if condition else do_nothing
+
 
 class SSDAugmentation(object):
     """ Transform to be used when training. """

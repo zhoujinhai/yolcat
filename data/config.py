@@ -55,7 +55,6 @@ COCO_LABEL_MAP = { 1:  1,  2:  2,  3:  3,  4:  4,  5:  5,  6:  6,  7:  7,  8:  8
                   82: 73, 84: 74, 85: 75, 86: 76, 87: 77, 88: 78, 89: 79, 90: 80}
 
 
-
 # ----------------------- CONFIG CLASS ----------------------- #
 
 class Config(object):
@@ -98,9 +97,6 @@ class Config(object):
     def print(self):
         for k, v in vars(self).items():
             print(k, ' = ', v)
-
-
-
 
 
 # ----------------------- DATASETS ----------------------- #
@@ -172,8 +168,19 @@ pascal_sbd_dataset = dataset_base.copy({
     'class_names': PASCAL_CLASSES,
 })
 
-
-
+CUSTOM_CLASSES = ("teeth", )
+CUSTOM_LABEL_MAP = {1: 1}
+tooth_dataset = Config(
+    {
+        "name": "tooth_dataset",
+        "train_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_train",
+        "train_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_train\annotations.json",
+        "valid_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_val",
+        "valid_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_val\annotations.json",
+        "class_names": CUSTOM_CLASSES,
+        "label_map": CUSTOM_LABEL_MAP
+    }
+)
 
 
 # ----------------------- TRANSFORMS ----------------------- #
@@ -202,9 +209,6 @@ darknet_transform = Config({
 })
 
 
-
-
-
 # ----------------------- BACKBONES ----------------------- #
 
 backbone_base = Config({
@@ -222,6 +226,7 @@ backbone_base = Config({
     'preapply_sqrt': True,
     'use_square_anchors': False,
 })
+
 
 resnet101_backbone = backbone_base.copy({
     'name': 'ResNet101',
@@ -299,9 +304,6 @@ vgg16_backbone = backbone_base.copy({
 })
 
 
-
-
-
 # ----------------------- MASK BRANCH TYPES ----------------------- #
 
 mask_type = Config({
@@ -365,9 +367,6 @@ mask_type = Config({
 })
 
 
-
-
-
 # ----------------------- ACTIVATION FUNCTIONS ----------------------- #
 
 activation_func = Config({
@@ -377,9 +376,6 @@ activation_func = Config({
     'relu':    lambda x: torch.nn.functional.relu(x, inplace=True),
     'none':    lambda x: x,
 })
-
-
-
 
 
 # ----------------------- FPN DEFAULTS ----------------------- #
@@ -409,14 +405,11 @@ fpn_base = Config({
 })
 
 
-
-
-
 # ----------------------- CONFIG DEFAULTS ----------------------- #
 
 coco_base_config = Config({
     'dataset': coco2014_dataset,
-    'num_classes': 81, # This should include the background class
+    'num_classes': 81,  # This should include the background class
 
     'max_iter': 400000,
 
@@ -648,9 +641,6 @@ coco_base_config = Config({
 })
 
 
-
-
-
 # ----------------------- YOLACT v1.0 CONFIGS ----------------------- #
 
 yolact_base_config = coco_base_config.copy({
@@ -750,9 +740,8 @@ yolact_resnet50_config = yolact_base_config.copy({
     }),
 })
 
-
 yolact_resnet50_pascal_config = yolact_resnet50_config.copy({
-    'name': None, # Will default to yolact_resnet50_pascal
+    'name': None,  # Will default to yolact_resnet50_pascal
     
     # Dataset stuff
     'dataset': pascal_sbd_dataset,
@@ -767,6 +756,20 @@ yolact_resnet50_pascal_config = yolact_resnet50_config.copy({
     })
 })
 
+yolact_resnet50_tooth_config = yolact_resnet50_config.copy({
+    "name": "tooth",
+    "dataset": tooth_dataset,
+    "num_classes": len(tooth_dataset.class_names) + 1,
+    "max_iter": 40000,
+    "lr_steps": (10000, 20000, 30000),
+    "label_map": CUSTOM_LABEL_MAP,
+    # Examples with confidence less than this are not considered by NMS
+    'nms_conf_thresh': 0.5,  # the tooth need high conf, so set big value
+    # Boxes with IoU overlap greater than this threshold will be culled during NMS
+    'nms_thresh': 0.1   # the tooth has no overlap, so set small value
+})
+
+
 # ----------------------- YOLACT++ CONFIGS ----------------------- #
 
 yolact_plus_base_config = yolact_base_config.copy({
@@ -775,7 +778,7 @@ yolact_plus_base_config = yolact_base_config.copy({
     'backbone': resnet101_dcn_inter3_backbone.copy({
         'selected_layers': list(range(1, 4)),
         
-        'pred_aspect_ratios': [ [[1, 1/2, 2]] ]*5,
+        'pred_aspect_ratios': [[[1, 1/2, 2]]]*5,
         'pred_scales': [[i * 2 ** (j / 3.0) for j in range(3)] for i in [24, 48, 96, 192, 384]],
         'use_pixel_scales': True,
         'preapply_sqrt': False,
@@ -809,6 +812,7 @@ yolact_plus_resnet50_config = yolact_plus_base_config.copy({
 # Default config
 cfg = yolact_base_config.copy()
 
+
 def set_cfg(config_name:str):
     """ Sets the active config. Works even if cfg is already imported! """
     global cfg
@@ -820,7 +824,7 @@ def set_cfg(config_name:str):
     if cfg.name is None:
         cfg.name = config_name.split('_config')[0]
 
+
 def set_dataset(dataset_name:str):
     """ Sets the dataset of the current config. """
     cfg.dataset = eval(dataset_name)
-    

@@ -1,3 +1,8 @@
+"""
+train on custom datasets : https://www.codenong.com/cs106722609/
+https://blog.csdn.net/qq_29960631/article/details/121868681
+"""
+
 from data import *
 from utils.augmentations import SSDAugmentation, BaseTransform
 from utils.functions import MovingAverage, SavePath
@@ -101,7 +106,8 @@ if args.autoscale and args.batch_size != 8:
 
 # Update training parameters from the config if necessary
 def replace(name):
-    if getattr(args, name) == None: setattr(args, name, getattr(cfg, name))
+    if getattr(args, name) is None:
+        setattr(args, name, getattr(cfg, name))
 
 
 replace('lr')
@@ -157,7 +163,6 @@ class CustomDataParallel(nn.DataParallel):
     This is a custom version of DataParallel that works better with our training data.
     It should also be faster than the general case.
     """
-
     def scatter(self, inputs, kwargs, device_ids):
         # More like scatter and data prep at the same time. The point is we prep the data in such a way
         # that no scatter is necessary, and there's no need to shuffle stuff around different GPUs.
@@ -196,8 +201,7 @@ def train():
     net.train()
 
     if args.log:
-        log = Log(cfg.name, args.log_folder, dict(args._get_kwargs()),
-            overwrite=(args.resume is None), log_gpu_stats=args.log_gpu)
+        log = Log(cfg.name, args.log_folder, dict(args._get_kwargs()), overwrite=(args.resume is None), log_gpu_stats=args.log_gpu)
 
     # I don't use the timer during training (I use a different timing method).
     # Apparently there's a race condition with multiple GPUs, so disable it just to be safe.
@@ -261,8 +265,8 @@ def train():
     save_path = lambda epoch, iteration: SavePath(cfg.name, epoch, iteration).get_path(root=args.save_folder)
     time_avg = MovingAverage()
 
-    global loss_types # Forms the print order
-    loss_avgs  = { k: MovingAverage(100) for k in loss_types }
+    global loss_types  # Forms the print order
+    loss_avgs  = {k: MovingAverage(100) for k in loss_types }
 
     print('Begin training!')
     print()
@@ -312,14 +316,14 @@ def train():
                 # Forward Pass + Compute loss at the same time (see CustomDataParallel and NetLoss)
                 losses = net(datum)
                 
-                losses = { k: (v).mean() for k,v in losses.items() } # Mean here because Dataparallel
+                losses = {k: (v).mean() for k, v in losses.items()}  # Mean here because Dataparallel
                 loss = sum([losses[k] for k in losses])
                 
                 # no_inf_mean removes some components from the loss, so make sure to backward through all of it
                 # all_loss = sum([v.mean() for v in losses.values()])
 
                 # Backprop
-                loss.backward() # Do this to free up vram even if loss is not finite
+                loss.backward()  # Do this to free up vram even if loss is not finite
                 if torch.isfinite(loss).item():
                     optimizer.step()
                 

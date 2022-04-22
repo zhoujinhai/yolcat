@@ -7,6 +7,7 @@ from ..box_utils import match, log_sum_exp, decode, center_size, crop, elemwise_
 
 from data import cfg, mask_type, activation_func
 
+
 class MultiBoxLoss(nn.Module):
     """SSD Weighted Loss Function
     Compute Targets:
@@ -118,7 +119,6 @@ class MultiBoxLoss(nn.Module):
             else:
                 crowd_boxes = None
 
-            
             match(self.pos_threshold, self.neg_threshold,
                   truths, priors.data, labels[idx], crowd_boxes,
                   loc_t, conf_t, idx_t, idx, loc_data[idx])
@@ -237,7 +237,6 @@ class MultiBoxLoss(nn.Module):
             loss_s += F.binary_cross_entropy_with_logits(cur_segment, segment_t, reduction='sum')
         
         return loss_s / mask_h / mask_w * cfg.semantic_segmentation_alpha
-
 
     def ohem_conf_loss(self, conf_data, conf_t, pos, num):
         # Compute max conf across batch for hard negative mining
@@ -427,7 +426,6 @@ class MultiBoxLoss(nn.Module):
 
         return cfg.conf_alpha * (class_loss + obj_pos_loss + obj_neg_loss)
 
-
     def direct_mask_loss(self, pos_idx, idx_t, loc_data, mask_data, priors, masks):
         """ Crops the gt masks using the predicted bboxes, scales them down, and outputs the BCE loss. """
         loss_m = 0
@@ -470,7 +468,6 @@ class MultiBoxLoss(nn.Module):
             loss_m += F.binary_cross_entropy(torch.clamp(pos_mask_data, 0, 1), mask_t, reduction='sum') * cfg.mask_alpha
 
         return loss_m
-    
 
     def coeff_diversity_loss(self, coeffs, instance_t):
         """
@@ -494,7 +491,6 @@ class MultiBoxLoss(nn.Module):
         # Only divide by num_pos once because we're summing over a num_pos x num_pos tensor
         # and all the losses will be divided by num_pos at the end, so just one extra time.
         return cfg.mask_proto_coeff_diversity_alpha * loss.sum() / num_pos
-
 
     def lincomb_mask_loss(self, pos, idx_t, loc_data, mask_data, priors, proto_data, masks, gt_box_t, score_data, inst_data, labels, interpolation_mode='bilinear'):
         mask_h = proto_data.size(1)

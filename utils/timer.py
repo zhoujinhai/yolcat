@@ -8,21 +8,26 @@ _timer_stack = []
 _running_timer = None
 _disable_all = False
 
+
 def disable_all():
 	global _disable_all
 	_disable_all = True
+
 
 def enable_all():
 	global _disable_all
 	_disable_all = False
 
+
 def disable(fn_name):
 	""" Disables the given function name fom being considered for the average or outputted in print_stats. """
 	_disabled_names.add(fn_name)
 
+
 def enable(fn_name):
 	""" Enables function names disabled by disable. """
 	_disabled_names.remove(fn_name)
+
 
 def reset():
 	""" Resets the current timer. Call this at the start of an iteration. """
@@ -31,6 +36,7 @@ def reset():
 	_start_times.clear()
 	_timer_stack.clear()
 	_running_timer = None
+
 
 def start(fn_name, use_stack=True):
 	"""
@@ -51,6 +57,7 @@ def start(fn_name, use_stack=True):
 		_running_timer = fn_name
 	else:
 		_start_times[fn_name] = time.perf_counter()
+
 
 def stop(fn_name=None, use_stack=True):
 	"""
@@ -105,6 +112,7 @@ def print_stats():
 	print(sep_text)
 	print(format_str.format('Total', total_time()*1000))
 	print()
+
 
 def total_time():
 	""" Returns the total amount accumulated across all functions in seconds. """ 

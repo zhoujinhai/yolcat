@@ -77,7 +77,6 @@ class Detect(object):
         
         return out
 
-
     def detect(self, batch_idx, conf_preds, decoded_boxes, mask_data, inst_data):
         """ Perform nms for only the max scoring class that isn't background (class 0) """
         cur_scores = conf_preds[batch_idx, 1:, :]
@@ -107,8 +106,7 @@ class Detect(object):
 
         return {'box': boxes, 'mask': masks, 'class': classes, 'score': scores}
 
-
-    def cc_fast_nms(self, boxes, masks, scores, iou_threshold:float=0.5, top_k:int=200):
+    def cc_fast_nms(self, boxes, masks, scores, iou_threshold:float=0.5, top_k: int=200):
         # Collapse all the classes into 1 
         scores, classes = scores.max(dim=0)
 

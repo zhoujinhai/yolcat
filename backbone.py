@@ -442,8 +442,6 @@ class VGGBackbone(nn.Module):
         self.in_channels = conv_channels*2
         self.channels.append(self.in_channels)
         self.layers.append(layer)
-        
-                
 
 
 def construct_backbone(cfg):

@@ -30,7 +30,6 @@ ScriptModuleWrapper = torch.jit.ScriptModule if use_jit else nn.Module
 script_method_wrapper = torch.jit.script_method if use_jit else lambda fn, _rcn=None: fn
 
 
-
 class Concat(nn.Module):
     def __init__(self, nets, extra_params):
         super().__init__()
@@ -375,7 +374,6 @@ class FastMaskIoUNet(ScriptModuleWrapper):
         return maskiou_p
 
 
-
 class Yolact(nn.Module):
     """
 
@@ -427,7 +425,6 @@ class Yolact(nn.Module):
             if cfg.mask_proto_bias:
                 cfg.mask_dim += 1
 
-
         self.selected_layers = cfg.backbone.selected_layers
         src_channels = self.backbone.channels
 
@@ -439,7 +436,6 @@ class Yolact(nn.Module):
             self.fpn = FPN([src_channels[i] for i in self.selected_layers])
             self.selected_layers = list(range(len(self.selected_layers) + cfg.fpn.num_downsample))
             src_channels = [cfg.fpn.num_features] * len(self.selected_layers)
-
 
         self.prediction_layers = nn.ModuleList()
         cfg.num_heads = len(self.selected_layers)
@@ -603,9 +599,8 @@ class Yolact(nn.Module):
                     bias_shape[-1] = 1
                     proto_out = torch.cat([proto_out, torch.ones(*bias_shape)], -1)
 
-
         with timer.env('pred_heads'):
-            pred_outs = { 'loc': [], 'conf': [], 'mask': [], 'priors': [] }
+            pred_outs = {'loc': [], 'conf': [], 'mask': [], 'priors': []}
 
             if cfg.use_mask_scoring:
                 pred_outs['score'] = []
@@ -674,8 +669,6 @@ class Yolact(nn.Module):
                     pred_outs['conf'] = F.softmax(pred_outs['conf'], -1)
 
             return self.detect(pred_outs, self)
-
-
 
 
 # Some testing code

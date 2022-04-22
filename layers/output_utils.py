@@ -12,6 +12,7 @@ from utils.augmentations import Resize
 from utils import timer
 from .box_utils import crop, sanitize_coordinates
 
+
 def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
                 visualize_lincomb=False, crop_masks=True, score_threshold=0):
     """
@@ -37,7 +38,7 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
     dets = dets['detection']
 
     if dets is None:
-        return [torch.Tensor()] * 4 # Warning, this is 4 copies of the same thing
+        return [torch.Tensor()] * 4  # Warning, this is 4 copies of the same thing
 
     if score_threshold > 0:
         keep = dets['score'] > score_threshold
@@ -93,7 +94,6 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         # Binarize the masks
         masks.gt_(0.5)
 
-    
     boxes[:, 0], boxes[:, 2] = sanitize_coordinates(boxes[:, 0], boxes[:, 2], w, cast=False)
     boxes[:, 1], boxes[:, 3] = sanitize_coordinates(boxes[:, 1], boxes[:, 3], h, cast=False)
     boxes = boxes.long()
@@ -120,9 +120,6 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         masks = full_masks
 
     return classes, scores, boxes, masks
-
-
-    
 
 
 def undo_image_transformation(img, w, h):
