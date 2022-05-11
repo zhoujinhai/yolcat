@@ -128,7 +128,7 @@ def undo_image_transformation(img, w, h):
     Arguments w and h are the original height and width of the image.
     """
     img_numpy = img.permute(1, 2, 0).cpu().numpy()
-    img_numpy = img_numpy[:, :, (2, 1, 0)] # To BRG
+    img_numpy = img_numpy[:, :, (2, 1, 0)]  # To BRG
 
     if cfg.backbone.transform.normalize:
         img_numpy = (img_numpy * np.array(STD) + np.array(MEANS)) / 255.0

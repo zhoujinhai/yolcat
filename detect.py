@@ -115,10 +115,12 @@ def parse_args(argv=None):
                         help='When displaying / saving video, draw the FPS on the frame')
     parser.add_argument('--emulate_playback', default=False, dest='emulate_playback', action='store_true',
                         help='When saving a video, emulate the framerate that you\'d get running in real-time mode.')
+    parser.add_argument('--save_masks', default=False, dest='save_masks', action='store_true',
+                        help='Whether use PIL save masks in eval image.')
 
     parser.set_defaults(no_bar=False, display=False, resume=False, output_coco_json=False, output_web_json=False, shuffle=False,
                         benchmark=False, no_sort=False, no_hash=False, mask_proto_debug=False, crop=True, detect=False, display_fps=False,
-                        emulate_playback=False)
+                        emulate_playback=False, save_masks=False)
 
     global args
     args = parser.parse_args(argv)
@@ -155,12 +157,34 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
                                         score_threshold   = args.score_threshold)
         cfg.rescore_bbox = save
 
+    mask_image = np.zeros((h, w), np.uint8)
     with timer.env('Copy'):
         idx = t[1].argsort(0, descending=True)[:args.top_k]
         
         if cfg.eval_mask_branch:
             # Masks are drawn on the GPU, so don't copy
             masks = t[3][idx]
+
+            # detect the contours for mask
+            if args.save_masks:
+                masks_cpu = masks.clone()
+                masks_cpu = masks_cpu.cpu().numpy()
+                for mask_id, mask in enumerate(masks_cpu):
+                    mask_image[mask >= 1] = mask_id + 1    # TODO: It will error on overlap region
+
+                # masks_cpu = masks.clone()
+                # masks_cpu = masks_cpu.cpu().numpy()
+                # for mask_id, mask in enumerate(masks_cpu):
+                #     tmp_image = np.zeros((h, w), np.uint8)
+                #     tmp_image[mask >= 1] = mask_id + 1
+                #
+                #     tmp_image = Image.fromarray(tmp_image, "P")
+                #     palette_data = [0, 0, 0, 128, 0, 0, 0, 128, 0, 128, 128, 0, 0, 0, 128, 128, 0, 128, 0, 128, 128, 128, 128, 128,
+                #                     64, 0, 0, 192, 0, 0, 64, 128, 0, 192, 128, 0, 64, 0, 128, 192, 0, 128, 64, 128, 128, 192, 128, 128,
+                #                     0, 64, 0, 128, 64, 0, 0, 192, 0, 128, 192, 0]  # 调色板
+                #     tmp_image.putpalette(palette_data)
+                #     tmp_image.save("D:/mask_" + str(mask_id+1) + ".png")
+
         classes, scores, boxes = [x[idx].cpu().numpy() for x in t[:3]]
 
     num_dets_to_consider = min(args.top_k, classes.shape[0])
@@ -261,7 +285,7 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
                 cv2.rectangle(img_numpy, (x1, y1), (x1 + text_w, y1 - text_h - 4), color, -1)
                 cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness, cv2.LINE_AA)
 
-    return img_numpy
+    return img_numpy, mask_image
 
 
 def prep_benchmark(dets_out, h, w):
@@ -603,8 +627,8 @@ def evalimage(net: Yolact, path: str, save_path: str=None):
     frame = torch.from_numpy(cv2.imread(path)).cuda().float()
     batch = FastBaseTransform()(frame.unsqueeze(0))
     preds = net(batch)
-    print("preds: ", preds)
-    img_numpy = prep_display(preds, frame, None, None, undo_transform=False)
+    # print("preds: ", preds)
+    img_numpy, masks_img = prep_display(preds, frame, None, None, undo_transform=False)
     
     if save_path is None:
         img_numpy = img_numpy[:, :, (2, 1, 0)]
@@ -615,6 +639,15 @@ def evalimage(net: Yolact, path: str, save_path: str=None):
         plt.show()
     else:
         cv2.imwrite(save_path, img_numpy)
+        if args.save_masks:
+            # masks_img = Image.fromarray(masks_img, "P")
+            # palette_data = [0, 0, 0, 128, 0, 0, 0, 128, 0, 128, 128, 0, 0, 0, 128, 128, 0, 128, 0, 128, 128, 128, 128, 128,
+            #                 64, 0, 0, 192, 0, 0, 64, 128, 0, 192, 128, 0, 64, 0, 128, 192, 0, 128, 64, 128, 128, 192, 128, 128,
+            #                 0, 64, 0, 128, 64, 0, 0, 192, 0, 128, 192, 0]  # 调色板
+            # masks_img.putpalette(palette_data)
+
+            masks_img = Image.fromarray(masks_img)
+            masks_img.save(os.path.splitext(save_path)[0] + "_masks.png")
 
 
 def evalimages(net: Yolact, input_folder: str, output_folder: str):

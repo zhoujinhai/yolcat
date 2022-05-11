@@ -173,10 +173,10 @@ CUSTOM_LABEL_MAP = {1: 1}
 tooth_dataset = Config(
     {
         "name": "tooth_dataset",
-        "train_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_train",
-        "train_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_train\annotations.json",
-        "valid_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_val",
-        "valid_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\3\coco_val\annotations.json",
+        "train_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\train_val\coco_train",
+        "train_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\train_val\coco_train\annotations.json",
+        "valid_images": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\train_val\coco_val",
+        "valid_info": r"\\10.99.11.210\Backups(d)\MeshCNN\splitData\MeshTrain\train_val\coco_val\annotations.json",
         "class_names": CUSTOM_CLASSES,
         "label_map": CUSTOM_LABEL_MAP
     }
@@ -434,7 +434,7 @@ coco_base_config = Config({
     # The terms to scale the respective loss by
     'conf_alpha': 1,
     'bbox_alpha': 1.5,
-    'mask_alpha': 0.4 / 256 * 140 * 140, # Some funky equation. Don't worry about it.
+    'mask_alpha': 0.4 / 256 * 140 * 140,  # Some funky equation. Don't worry about it.
 
     # Eval.py sets this if you just want to run YOLACT as a detector
     'eval_mask_branch': True,
@@ -662,7 +662,7 @@ yolact_base_config = coco_base_config.copy({
         'selected_layers': list(range(1, 4)),
         'use_pixel_scales': True,
         'preapply_sqrt': False,
-        'use_square_anchors': True, # This is for backward compatability with a bug
+        'use_square_anchors': True,  # This is for backward compatability with a bug
 
         'pred_aspect_ratios': [ [[1, 1/2, 2]] ]*5,
         'pred_scales': [[24], [48], [96], [192], [384]],
@@ -766,7 +766,7 @@ yolact_resnet50_tooth_config = yolact_resnet50_config.copy({
     # Examples with confidence less than this are not considered by NMS
     'nms_conf_thresh': 0.5,  # the tooth need high conf, so set big value
     # Boxes with IoU overlap greater than this threshold will be culled during NMS
-    'nms_thresh': 0.1   # the tooth has no overlap, so set small value
+    'nms_thresh': 0.2   # the tooth has no overlap, so set small value
 })
 
 
