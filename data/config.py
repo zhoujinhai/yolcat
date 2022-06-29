@@ -766,7 +766,7 @@ yolact_resnet50_tooth_config = yolact_resnet50_config.copy({
     # Examples with confidence less than this are not considered by NMS
     'nms_conf_thresh': 0.5,  # the tooth need high conf, so set big value
     # Boxes with IoU overlap greater than this threshold will be culled during NMS
-    'nms_thresh': 0.2   # the tooth has no overlap, so set small value
+    'nms_thresh': 0.4  # the tooth has no overlap, so set small value
 })
 
 

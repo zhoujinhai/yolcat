@@ -258,7 +258,7 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
         cv2.putText(img_numpy, fps_str, text_pt, font_face, font_scale, text_color, font_thickness, cv2.LINE_AA)
     
     if num_dets_to_consider == 0:
-        return img_numpy
+        return img_numpy, mask_image
 
     if args.display_text or args.display_bboxes:
         for j in reversed(range(num_dets_to_consider)):

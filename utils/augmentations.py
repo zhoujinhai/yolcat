@@ -72,7 +72,6 @@ class ConvertFromInts(object):
         return image.astype(np.float32), masks, boxes, labels
 
 
-
 class ToAbsoluteCoords(object):
     def __call__(self, image, masks=None, boxes=None, labels=None):
         height, width, channels = image.shape
@@ -125,6 +124,7 @@ class Pad(object):
             masks = expand_masks
 
         return expand_image, masks, boxes, labels
+
 
 class Resize(object):
     """ If preserve_aspect_ratio is true, this resizes to an approximate area of max_size * max_size """
@@ -564,6 +564,7 @@ class PrepareMasks(object):
 
         return image, new_masks, boxes, labels
 
+
 class BackboneTransform(object):
     """
     Transforms a BRG image made of floats in the range [0, 255] to whatever
@@ -597,8 +598,6 @@ class BackboneTransform(object):
         return img.astype(np.float32), masks, boxes, labels
 
 
-
-
 class BaseTransform(object):
     """ Transorm to be used when evaluating. """
 
@@ -612,7 +611,9 @@ class BaseTransform(object):
     def __call__(self, img, masks=None, boxes=None, labels=None):
         return self.augment(img, masks, boxes, labels)
 
+
 import torch.nn.functional as F
+
 
 class FastBaseTransform(torch.nn.Module):
     """

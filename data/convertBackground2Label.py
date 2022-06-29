@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import copy
 import base64
+import shutil
 
 
 def encode_base64(file):
@@ -14,6 +15,22 @@ def encode_base64(file):
         base64_data = base64.b64encode(img_data)
         base64_str = str(base64_data, "utf-8")
         return base64_str
+
+
+def modify_json_file(json_file, img_path, save_dir):
+    with open(json_file, "r") as f:
+        json_data = json.load(f)
+        print("deal", json_file, json_data.keys())
+
+        file_name = os.path.splitext(os.path.basename(img_path))[0]
+        base64_data = encode_base64(img_path)
+
+        json_data.update({"imagePath": file_name + "_black"})
+        json_data.update({"imageData": base64_data})
+
+        save_path = os.path.join(save_dir, file_name + "_black.json")
+        with open(save_path, 'w') as wf:
+            json.dump(json_data, wf)
 
 
 def mask_to_json(img_path, mask_path, save_dir):
@@ -67,18 +84,20 @@ def mask_to_json(img_path, mask_path, save_dir):
 
 
 if __name__ == "__main__":
-    img_dir = r"E:\data\SplitTooth\img\MeshScan\white"
-    mask_dir = r"E:\data\SplitTooth\img\results\scanModel"
-    save_dir = r"E:\data\SplitTooth\img\MeshScan\predictJson"
-    img_paths = glob.glob(os.path.join(img_dir, "*.png"))
+    save_dir = r"E:\data\SplitTooth\img\MeshScan\blackJson"
+    json_img_dir = r"E:\data\SplitTooth\img\MeshScan\adjustJson"
+    black_img_dir = r"E:\data\SplitTooth\img\MeshScan\adjustBlack"
+    img_paths = glob.glob(os.path.join(json_img_dir, "*.png"))
 
     for img_path in img_paths:
         basename = os.path.basename(img_path)
         file_name = os.path.splitext(basename)[0]
-        mask_path = os.path.join(mask_dir, file_name + "_masks.png")
-        if os.path.isfile(mask_path) and os.path.isfile(img_path):
-            print(img_path, mask_path)
-            mask_to_json(img_path, mask_path, save_dir)
+        black_img_path = os.path.join(black_img_dir, file_name + ".png")
+        img_save_path = os.path.join(save_dir, file_name + "_black.png")
+        json_path = os.path.join(json_img_dir, file_name + ".json")
+        if os.path.isfile(black_img_path) and os.path.isfile(json_path):
+            modify_json_file(json_path, black_img_path, save_dir)
+            shutil.copyfile(black_img_path, img_save_path)
 
 
 

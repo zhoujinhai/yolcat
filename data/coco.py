@@ -135,11 +135,14 @@ class COCODetection(data.Dataset):
         # In 2014, images have the pattern COCO_{train/val}2014_%012d.jpg, while in 2017 it's %012d.jpg.
         # Our script downloads the images as %012d.jpg so convert accordingly.
         file_name = self.coco.loadImgs(img_id)[0]['file_name']
-        
+        # print("********", file_name, file_name.split("\\"))
         if file_name.startswith('COCO'):
             file_name = file_name.split('_')[-1]
+        if file_name.find("\\") != -1:
+            file_name = "/".join(file_name.split("\\"))
 
         path = osp.join(self.root, file_name)
+        # print(self.root, file_name)
         assert osp.exists(path), 'Image path does not exist: {}'.format(path)
         
         img = cv2.imread(path)
