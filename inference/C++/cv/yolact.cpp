@@ -278,8 +278,8 @@ bool Yolact::Predict(std::string imgPath,YolactDetectRes& res, const YolactDetec
 			}*/
 			
 			// find largest 
-			std::vector<std::vector < core::Vector2i >> components;
-			std::queue<core::Vector2i> pixelQueue;
+			std::vector<std::vector < std::vector<int> >> components;
+			std::queue<std::vector<int> > pixelQueue;
 			for (int i = 0; i < imgW; ++i)
 			{
 				for (int j = 0; j < imgH; ++j)
@@ -287,32 +287,32 @@ bool Yolact::Predict(std::string imgPath,YolactDetectRes& res, const YolactDetec
 					unsigned char* pPixel = pData + (j * imgW + i);
 					if (*pPixel > 0)
 					{
-						std::vector < core::Vector2i > currentComponent;
-						currentComponent.push_back(core::Vector2i(i, j));
-						pixelQueue.push(core::Vector2i(i, j));
+						std::vector < std::vector<int> > currentComponent;
+						currentComponent.push_back({ i, j });
+						pixelQueue.push({ i, j });
 						*pPixel = 0;
 						while (!pixelQueue.empty())
 						{
-							core::Vector2i currentPixel = pixelQueue.front();
+							std::vector<int> currentPixel = pixelQueue.front();
 							pixelQueue.pop();
 
 							for (int k = -1; k <= 1; ++k)
 							{
-								int x = currentPixel.x() + k;
+								int x = currentPixel[0] + k;
 								if (x >= 0 && x < imgW)
 								{
 									for (int t = -1; t <= 1; ++t)
 									{
 										if (k == 0 && t == 0)
 											continue;
-										int y = currentPixel.y() + t;
+										int y = currentPixel[1] + t;
 										if (y >= 0 && y < imgH)
 										{
 											pPixel = pData + (y * imgW + x);
 											if (*pPixel > 0)
 											{
-												currentComponent.push_back(core::Vector2i(x, y));
-												pixelQueue.push(core::Vector2i(x, y));
+												currentComponent.push_back({ x, y });
+												pixelQueue.push({ x, y });
 												*pPixel = 0;
 											}
 										}
@@ -337,14 +337,14 @@ bool Yolact::Predict(std::string imgPath,YolactDetectRes& res, const YolactDetec
 			// get result
 			if (maxId >= 0) {
 				int xMin = imgW + 1, xMax = -1, yMin = imgH + 1, yMax = -1;
-				for (core::Vector2i pt : components[maxId]) {
-					int k = pt.y() * imgW + pt.x();
+				for (std::vector<int> pt : components[maxId]) {
+					int k = pt[1] * imgW + pt[0];
 					resData[k] = n;
 
-					if (pt.x() > xMax) xMax = pt.x();
-					if (pt.x() < xMin) xMin = pt.x();
-					if (pt.y() > yMax) yMax = pt.y();
-					if (pt.y() < yMin) yMin = pt.y();
+					if (pt[0] > xMax) xMax = pt[0];
+					if (pt[0] < xMin) xMin = pt[0];
+					if (pt[1] > yMax) yMax = pt[1];
+					if (pt[1] < yMin) yMin = pt[1];
 				}
 
 				// update box

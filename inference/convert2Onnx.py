@@ -71,7 +71,7 @@ def fuse_model(m):
             fuse_model(child)
 
 
-def benchmark(model, inp, iters=10):
+def benchmark(model, inp, iters=500):
     model(inp)
     begin = time.time()
     for _ in range(iters):
@@ -88,7 +88,7 @@ def test_diff(o_output, f_output):
 
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    # device = "cpu"
     weight_path = "../weights/20220613_batch8/tooth_272_40000.pth"
     set_cfg("yolact_resnet50_tooth_config")
 

@@ -8,6 +8,7 @@ __pycache__/
 
 # Model
 *.onnx
+*.bin
 
 # Distribution / packaging
 .Python
@@ -162,3 +163,5 @@ vid/
 vidres/
 
 _.py
+
+*/build/
