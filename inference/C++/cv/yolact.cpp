@@ -12,7 +12,7 @@ Yolact::Yolact()
 Yolact::~Yolact()
 {
 	if (net_) {
-		delete net_;
+		delete static_cast<cv::dnn::Net *>(net_);
 		net_ = nullptr;
 	}
 	if (priorBox_) {
@@ -175,11 +175,11 @@ bool Yolact::Predict(std::string imgPath,YolactDetectRes& res, const YolactDetec
 	std::vector<int> maskIds;
 	const int numClass = predictRes[1].cols;
 	for (int i = 0; i < numPriors_; ++i) {
-		cv::Mat conf = predictRes[1].row(i).colRange(1, numClass);
+		cv::Mat conf = predictRes[1].row(i).colRange(0, numClass);
 		cv::Point classIdPt;
 		double score;
 		cv::minMaxLoc(conf, 0, &score, 0, &classIdPt);  // class
-		if (score > opt.confThresh) {
+		if (classIdPt.x > 0 && score > opt.confThresh) {
 			const float* loc = (float*)predictRes[0].data + i * 4;
 			const float* pb = priorBox_ + i * 4;
 			float cx = pb[0];
@@ -256,7 +256,7 @@ bool Yolact::Predict(std::string imgPath,YolactDetectRes& res, const YolactDetec
 		//unsigned char* maskData = mask.data;
 		res.boxes.push_back({ box.x, box.y, box.width, box.height });
 		res.scores.push_back(confs[idx]);
-		res.classIds.push_back(classIds[idx] + 1);
+		res.classIds.push_back(classIds[idx]);
 
 		mask.convertTo(mask, CV_8UC1);
 		if (res.bOverlap) {

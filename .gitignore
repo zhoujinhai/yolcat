@@ -8,7 +8,7 @@ __pycache__/
 
 # Model
 *.onnx
-*.bin
+
 
 # Distribution / packaging
 .Python
