@@ -14,6 +14,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #endif
 
+#include "seg.h"
+
 
 struct Object
 {
@@ -94,15 +96,15 @@ static void nms_sorted_bboxes(const std::vector<Object>& objects, std::vector<in
 		const Object& a = objects[i];
 
 		int keep = 1;
-		for (int j = 0; j < (int)picked.size(); j++)
+		for (int j = 0; j < (int)picked.size(); ++j)
 		{
 			const Object& b = objects[picked[j]];
 
 			// intersection over union
 			float inter_area = intersection_area(a, b);
 			float union_area = areas[i] + areas[picked[j]] - inter_area;
-			//             float IoU = inter_area / union_area
-			if (inter_area / union_area > nms_threshold)
+			// float IoU = inter_area / union_area
+			if (inter_area / union_area > nms_threshold || inter_area / areas[picked[j]] > 0.5 || inter_area / areas[i] > 0.5)
 				keep = 0;
 		}
 
@@ -129,7 +131,7 @@ static void draw_objects(const cv::Mat& bgr, const std::vector<Object>& objects)
 		if (obj.prob < 0.15)
 			continue;
 
-		fprintf(stderr, "%d = %.5f at %.2f %.2f %.2f x %.2f\n", obj.label, obj.prob,
+		fprintf(stderr, "%d class %d = %.5f at %.2f %.2f %.2f x %.2f\n", i+1, obj.label, obj.prob,
 			obj.rect.x, obj.rect.y, obj.rect.width, obj.rect.height);
 
 		const unsigned char* color = colors[color_index % 81];
@@ -200,17 +202,17 @@ static bool predict(ncnn::Extractor& ex, const cv::Mat& img, std::vector<Object>
 	input.substract_mean_normalize(mean_vals, norm_vals);
 
 	// 2. Inference
-	ex.input("img", input);   // set input 
+	ex.input(0, input);   // set input  "img" ==> test_sim_param_id::BLOB_img = 0
 	// get output
 	ncnn::Mat maskMaps;
 	ncnn::Mat location;
 	ncnn::Mat mask;
 	ncnn::Mat confidence;
 
-	ex.extract("proto", maskMaps);  // 138 * 138 * 32      "355" ==> "proto"
-	ex.extract("loc", location);    // 4 * 19248         "551" ==> "loc"
-	ex.extract("mask", mask);       // 32 * 19248         "553" ==> "mask"
-	ex.extract("conf", confidence); // n_class * 19248    "554" ==> "conf"
+	ex.extract(276, maskMaps);  // 138 * 138 * 32      "355" ==> "proto" ==> test_sim_param_id::BLOB_proto = 276  后面文件不需要引号
+	ex.extract(273, location);    // 4 * 19248         "551" ==> "loc" ==> test_sim_param_id::BLOB_loc = 273
+	ex.extract(275, mask);       // 32 * 19248         "553" ==> "mask" ==> test_sim_param_id::BLOB_mask = 275
+	ex.extract(274, confidence); // n_class * 19248    "554" ==> "conf" ==> test_sim_param_id::BLOB_conf = 274
 
 	// 3. Parse result
 	int numClass = confidence.w;
@@ -222,9 +224,9 @@ static bool predict(ncnn::Extractor& ex, const cv::Mat& img, std::vector<Object>
 	const float aspectRatios[3] = { 1.f, 0.5f, 2.f };
 	const float scales[5] = { 24.f, 48.f, 96.f, 192.f, 384.f };
 	const float var[4] = { 0.1f, 0.1f, 0.2f, 0.2f };
-	const float confThresh = 0.8;
-	const float nmsThresh = 0.2;
-	const int topK = 100;
+	const float confThresh = 0.55;
+	const float nmsThresh = 0.5;
+	const int topK = 20;
 
 	// make priorbox
 	ncnn::Mat priorBox(4, numPriors);
@@ -298,7 +300,7 @@ static bool predict(ncnn::Extractor& ex, const cv::Mat& img, std::vector<Object>
 		float objX2 = bboxCx + bboxW * 0.5f;
 		float objY2 = bboxCy + bboxH * 0.5f;
 
-		// clip
+		//  limit boundary
 		objX1 = std::max(std::min(objX1 * img.cols, (float)(img.cols - 1)), 0.f);
 		objY1 = std::max(std::min(objY1 * img.rows, (float)(img.rows - 1)), 0.f);
 		objX2 = std::max(std::min(objX2 * img.cols, (float)(img.cols - 1)), 0.f);
@@ -373,6 +375,11 @@ static bool predict(ncnn::Extractor& ex, const cv::Mat& img, std::vector<Object>
 		}
 	}
 
+	maskMaps.release();
+	confidence.release();
+	location.release();
+	mask.release();
+
 	return true;
 }
 
@@ -382,20 +389,36 @@ int main(int argc, char* argv[])
 	const std::string paramPath = "E:/code/TestC++/ncnn/test_sim.param";
 	const std::string binPath = "E:/code/TestC++/ncnn/test_sim.bin";
 	const std::string paramBinPath = "E:/code/TestC++/ncnn/test_sim.param.bin";
+	const std::string allBin = "E:/code/TestC++/ncnn/test_sim_all.bin";  // cat test_sim.param.bin test_sim.bin > test_sim_all.bin
 	
-	const std::string testImgPath = "E:/code/TestC++/ncnn/test.png";
+	const std::string testImgPath = "E:/code/TestC++/ncnn/top.png";
+
+	Seg2D seg2D;
+	DetectOption opt;
+	DetectRes res;
+	seg2D.Build(allBin, opt);
+	if (seg2D.IsValid()) {
+		seg2D.Predict(testImgPath, res, opt);   // skip first
+		auto start = std::chrono::system_clock::now();
+		for (int i = 0; i < 100; ++i) {
+			seg2D.Predict(testImgPath, res, opt);
+		}
+		auto end = std::chrono::system_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		std::cout << double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << " s!" << std::endl;
+	}
+	seg2D.Show(testImgPath, res, opt);
+	seg2D.Clear();
+	return 0;
 
 	// Load Model
 	ncnn::Net net;
 
 	// net.opt.use_vulkan_compute = true;
-	// 1.Load model
-	// --- method 1 ---
-	net.load_param(paramPath.c_str());
-	net.load_model(binPath.c_str());
-
-	ncnn::Extractor ex = net.create_extractor();
-	ex.set_num_threads(4);
+	////// 1.Load model
+	//// --- method 1 ---
+	//net.load_param(paramPath.c_str());
+	//net.load_model(binPath.c_str());
 
 	//// --- method 2 ---
 	//net.load_param_bin(paramBinPath.c_str());
@@ -406,6 +429,11 @@ int main(int argc, char* argv[])
 	//net.load_param(test_sim_param_bin);
 	//net.load_model(test_sim_bin);
 
+	// --- method 4 ---
+	FILE* fp = fopen(allBin.c_str(), "rb");
+	int a = net.load_param_bin(fp);
+	int b = net.load_model(fp);
+	fclose(fp);
 
 	const std::vector<ncnn::Blob>& netBlobs = net.blobs();
 	const std::vector<ncnn::Layer*>& netLayers = net.layers();
@@ -423,15 +451,21 @@ int main(int argc, char* argv[])
 #endif
 
 	std::vector<Object> objects;
-	auto start = std::chrono::system_clock::now();
-	for (int i = 0; i < 100; ++i) {
+
+	ncnn::Extractor ex = net.create_extractor();
+	ex.set_num_threads(4);
+
+	auto start1 = std::chrono::system_clock::now();
+	for (int i = 0; i < 1; ++i) {
 		predict(ex, img, objects);
 	}
-	auto end = std::chrono::system_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-	std::cout << double(duration.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << " s!" << std::endl;
+	auto end1 = std::chrono::system_clock::now();
+	auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
+	std::cout << double(duration1.count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den << " s!" << std::endl;
 
 	draw_objects(img, objects);
 
+	ex.clear();
+	net.clear();
 	return 0;
 }

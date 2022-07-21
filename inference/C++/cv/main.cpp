@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 	yolact.Build(modelPath, opt);
 	YolactDetectRes res;
 
-
+	yolact.Predict(imgPath, res, opt);  // skip first
 	auto start = std::chrono::system_clock::now();
 	for(int i = 0; i < 100; ++i){
 		yolact.Predict(imgPath, res, opt);

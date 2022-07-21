@@ -69,7 +69,7 @@ elseif(UNIX)
 	set(OPENCV_INCLUDE_PATH "${OPENCV_ROOT}/include" CACHE INTERNAL "")
 endif()
 
-add_executable(${PROJECT_NAME} testNcnn.cpp)
+add_executable(${PROJECT_NAME} seg.h seg.cpp main.cpp testNcnn.cpp)
 target_include_directories(${PROJECT_NAME}  
 PRIVATE 
 	${NCNN_INCLUDE_PATH}
