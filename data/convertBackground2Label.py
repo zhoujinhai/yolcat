@@ -16,6 +16,43 @@ def encode_base64(file):
         base64_str = str(base64_data, "utf-8")
         return base64_str
 
+def convert_black_white(image_path, save_path, mode="w2b"):
+    image = cv2.imread(image_path, -1)
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    h, w, c = image.shape
+    dst = np.zeros((h, w, 3), np.uint8)
+    for y in range(0, h):
+        for x in range(0, w):
+            if mode == "b2w":
+                if c == 4:
+                    (b, g, r, a) = image[y, x]
+                    if (b, g, r) == (0, 0, 0):
+                        dst[y, x] = (255, 255, 255)
+                    else:
+                        dst[y, x] = (b, g, r)
+                if c == 3:
+                    (b, g, r) = image[y, x]
+                    if (b, g, r) == (0, 0, 0):
+                        dst[y, x] = (255, 255, 255)
+                    else:
+                        dst[y, x] = (b, g, r)
+            elif mode == "w2b":
+                if c == 4:
+                    (b, g, r, a) = image[y, x]
+                    if (b, g, r) == (255, 255, 255):
+                        dst[y, x] = (0, 0, 0)
+                    else:
+                        dst[y, x] = (b, g, r)
+                if c == 3:
+                    (b, g, r) = image[y, x]
+                    if (b, g, r) == (255, 255, 255):
+                        dst[y, x] = (0, 0, 0)
+                    else:
+                        dst[y, x] = (b, g, r)
+
+    cv2.imwrite(save_path, dst)
+    return dst
+    
 
 def modify_json_file(json_file, img_path, save_dir):
     with open(json_file, "r") as f:
@@ -98,6 +135,18 @@ if __name__ == "__main__":
         if os.path.isfile(black_img_path) and os.path.isfile(json_path):
             modify_json_file(json_path, black_img_path, save_dir)
             shutil.copyfile(black_img_path, img_save_path)
+            
+    # png_dir = r"E:\data\SplitTooth\AddFDIClassAndKeyPoint\newLabeled\black"
+    # save_dir = r"E:\data\SplitTooth\AddFDIClassAndKeyPoint\newLabeled\white"
+    # png_files = glob.glob(os.path.join(png_dir, "*.png"))
+    # for png_file in png_files:
+    #     file_name = os.path.basename(png_file)
+    #     file_name = file_name.replace("black", "white")
+    #     # if file_name.find("white") != -1:
+    #     #     continue
+    #     save_path = os.path.join(save_dir, file_name)
+    #     print(png_file, save_path)
+    #     convert_black_white(png_file, save_path, "b2w")
 
 
 
